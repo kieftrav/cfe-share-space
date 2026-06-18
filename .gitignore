@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+# cfe.sqlite IS committed as a seeded starting point; ignore only the journal sidecars.
+*.sqlite-shm
+*.sqlite-wal
+e2e/screenshots/
+.DS_Store
