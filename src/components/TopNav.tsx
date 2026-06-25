@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { api, type Content } from '../api'
 import { user } from '../store'
 import { AuthButton } from './AuthButton'
@@ -13,6 +13,7 @@ const PRIMARY = [
 export function TopNav() {
   const [resources, setResources] = useState<Content[]>([])
   const [openRes, setOpenRes] = useState(false)
+  const resRef = useRef<HTMLLIElement>(null)
 
   useEffect(() => {
     api
@@ -23,6 +24,16 @@ export function TopNav() {
       })
       .catch(() => {})
   }, [])
+
+  // Close the dropdown on any click outside it (deterministic — no hover races).
+  useEffect(() => {
+    if (!openRes) return
+    const onDoc = (e: MouseEvent) => {
+      if (resRef.current && !resRef.current.contains(e.target as Node)) setOpenRes(false)
+    }
+    document.addEventListener('click', onDoc)
+    return () => document.removeEventListener('click', onDoc)
+  }, [openRes])
 
   return (
     <header data-testid="top-nav" class="border-b border-edge bg-bg-card/70 backdrop-blur sticky top-0 z-20">
@@ -36,17 +47,26 @@ export function TopNav() {
               </a>
             </li>
           ))}
-          <li class="relative" onMouseLeave={() => setOpenRes(false)}>
+          <li class="relative" ref={resRef}>
             <button
               data-testid="nav-resources"
+              aria-haspopup="true"
+              aria-expanded={openRes}
               class="text-ink-muted hover:text-ink bg-transparent border-0 cursor-pointer text-sm"
-              onClick={() => setOpenRes(true)}
-              onMouseEnter={() => setOpenRes(true)}
+              onClick={() => setOpenRes((v) => !v)}
             >
               Resources ▾
             </button>
-            {openRes && resources.length > 0 && (
-              <div data-testid="resources-menu" class="absolute left-0 top-full mt-1 min-w-[200px] rounded-md border border-edge bg-bg-card py-1 shadow-lg">
+            {openRes && (
+              <div data-testid="resources-menu" class="absolute left-0 top-full mt-1 min-w-[220px] rounded-md border border-edge bg-bg-card py-1 shadow-lg">
+                <a
+                  data-testid="res-link-all"
+                  href="/resources"
+                  class="block px-4 py-2 text-sm text-ink hover:text-accent hover:bg-bg-card-hover no-underline border-b border-edge"
+                  onClick={() => setOpenRes(false)}
+                >
+                  All resources →
+                </a>
                 {resources.map((c) =>
                   c.type === 'external_link' ? (
                     <a
@@ -56,6 +76,7 @@ export function TopNav() {
                       target="_blank"
                       rel="noopener"
                       class="block px-4 py-2 text-sm text-ink-muted hover:text-ink hover:bg-bg-card-hover no-underline"
+                      onClick={() => setOpenRes(false)}
                     >
                       {c.title} ↗
                     </a>
@@ -65,6 +86,7 @@ export function TopNav() {
                       data-testid={`res-link-${c.id}`}
                       href={`/resources/${c.id}`}
                       class="block px-4 py-2 text-sm text-ink-muted hover:text-ink hover:bg-bg-card-hover no-underline"
+                      onClick={() => setOpenRes(false)}
                     >
                       {c.title}
                     </a>

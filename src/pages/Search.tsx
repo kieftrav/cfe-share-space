@@ -4,7 +4,7 @@ import { api } from '../api'
 type Result = { content_id: number; type: string; title: string; snippet: string }
 
 const ROUTE: Record<string, (id: number) => string> = {
-  cfe: () => '/',
+  cfe: () => '/cfes',
   thread: (id) => `/discussion/${id}`,
   reply: (id) => `/discussion/${id}`,
   announcement: () => '/news',

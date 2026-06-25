@@ -44,6 +44,9 @@ export function Admin() {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [users, setUsers] = useState<any[]>([])
   const [msg, setMsg] = useState('')
+  const [newLogin, setNewLogin] = useState('')
+  const [newRole, setNewRole] = useState('contributor')
+  const [menuId, setMenuId] = useState<number | null>(null)
 
   async function loadTree() {
     const { tree } = await api.get('/api/content/tree')
@@ -62,6 +65,16 @@ export function Admin() {
     loadTree().catch(() => {})
     loadUsers()
   }, [])
+
+  // Close any open row action-menu when clicking elsewhere.
+  useEffect(() => {
+    if (menuId === null) return
+    const onDoc = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-testid="node-actions"]')) setMenuId(null)
+    }
+    document.addEventListener('click', onDoc)
+    return () => document.removeEventListener('click', onDoc)
+  }, [menuId])
 
   if (user.value === undefined) return <p class="text-ink-muted">Loading…</p>
   if (user.value?.role !== 'admin') {
@@ -130,6 +143,26 @@ export function Admin() {
     await loadUsers()
   }
 
+  // One-click review toggle: flip metadata.reviewed so a CFE moves on/off the landing page.
+  async function toggleReviewed(n: Content) {
+    const meta = { ...(n.metadata || {}), reviewed: !n.metadata?.reviewed }
+    await api.put(`/api/content/${n.id}`, { metadata: meta })
+    await loadTree()
+  }
+
+  async function addUser() {
+    const login = newLogin.trim()
+    if (!login) return setMsg('Enter a Zooniverse login.')
+    try {
+      await api.post('/api/users', { login, role: newRole })
+      setNewLogin('')
+      setMsg('User added.')
+      await loadUsers()
+    } catch (e: any) {
+      setMsg(e?.message || 'Could not add user')
+    }
+  }
+
   return (
     <section data-testid="admin">
       <div class="flex items-center gap-4 mb-6">
@@ -177,12 +210,32 @@ export function Admin() {
                   <span class="text-ink-heading">{n.title || '(untitled)'}</span>
                   <span class="text-xs text-ink-muted">{n.type}</span>
                   {n.status === 'draft' && <span class="text-xs text-orange-400">draft</span>}
-                  <span class="ml-auto flex gap-1">
-                    <button data-testid="node-up" title="Move up" class="px-1.5 text-ink-muted hover:text-ink" onClick={() => move(n, -1)}>↑</button>
-                    <button data-testid="node-down" title="Move down" class="px-1.5 text-ink-muted hover:text-ink" onClick={() => move(n, 1)}>↓</button>
-                    <button data-testid="node-addchild" title="Add child" class="px-1.5 text-ink-muted hover:text-accent" onClick={() => setDraft(emptyDraft(n.id))}>＋</button>
-                    <button data-testid="node-edit" class="px-1.5 text-ink-muted hover:text-accent" onClick={() => editNode(n)}>edit</button>
-                    <button data-testid="node-del" class="px-1.5 text-ink-muted hover:text-red-400" onClick={() => del(n)}>del</button>
+                  {n.type === 'cfe' && n.metadata?.reviewed && <span class="text-xs text-accent">reviewed</span>}
+                  <span data-testid="node-actions" class="ml-auto relative">
+                    <button
+                      data-testid="node-menu"
+                      aria-haspopup="true"
+                      aria-expanded={menuId === n.id}
+                      title="Actions"
+                      class="px-2 text-ink-muted hover:text-ink leading-none text-lg"
+                      onClick={() => setMenuId((id) => (id === n.id ? null : n.id))}
+                    >
+                      ⋮
+                    </button>
+                    {menuId === n.id && (
+                      <div data-testid="node-menu-panel" class="absolute right-0 top-full mt-1 z-10 min-w-[150px] rounded-sm border border-edge bg-bg-card py-1 shadow-lg flex flex-col text-left">
+                        {n.type === 'cfe' && (
+                          <button data-testid="node-review" class={`px-3 py-1.5 text-left hover:bg-bg-card-hover ${n.metadata?.reviewed ? 'text-accent' : 'text-ink hover:text-accent'}`} onClick={() => { setMenuId(null); toggleReviewed(n) }}>
+                            {n.metadata?.reviewed ? '✓ reviewed (unset)' : 'Mark reviewed'}
+                          </button>
+                        )}
+                        <button data-testid="node-up" class="px-3 py-1.5 text-left text-ink hover:bg-bg-card-hover" onClick={() => { setMenuId(null); move(n, -1) }}>↑ Move up</button>
+                        <button data-testid="node-down" class="px-3 py-1.5 text-left text-ink hover:bg-bg-card-hover" onClick={() => { setMenuId(null); move(n, 1) }}>↓ Move down</button>
+                        <button data-testid="node-addchild" class="px-3 py-1.5 text-left text-ink hover:bg-bg-card-hover" onClick={() => { setMenuId(null); setDraft(emptyDraft(n.id)) }}>＋ Add child</button>
+                        <button data-testid="node-edit" class="px-3 py-1.5 text-left text-ink hover:bg-bg-card-hover" onClick={() => { setMenuId(null); editNode(n) }}>Edit</button>
+                        <button data-testid="node-del" class="px-3 py-1.5 text-left text-red-400 hover:bg-bg-card-hover" onClick={() => { setMenuId(null); del(n) }}>Delete</button>
+                      </div>
+                    )}
                   </span>
                 </div>
               ))}
@@ -260,8 +313,13 @@ export function Admin() {
                     <input data-testid="cfe-live" class="rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink" placeholder="Live URL (optional)" value={draft.metadata.live_url || ''} onInput={(e) => setMeta('live_url', (e.target as HTMLInputElement).value)} />
                     <input data-testid="cfe-tagline" class="rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink" placeholder="Tagline" value={draft.metadata.tagline || ''} onInput={(e) => setMeta('tagline', (e.target as HTMLInputElement).value)} />
                     <input data-testid="cfe-tags" class="rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink" placeholder="Tags (comma separated)" value={(draft.metadata.tags || []).join(', ')} onInput={(e) => setMeta('tags', (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean))} />
+                    <input data-testid="cfe-owner" class="rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink" placeholder="Owner" value={draft.metadata.owner || ''} onInput={(e) => setMeta('owner', (e.target as HTMLInputElement).value)} />
                     <input data-testid="cfe-image-input" type="file" accept="image/*" class="text-sm text-ink-muted" onChange={async (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) setMeta('image', await fileToDataUrl(f)) }} />
-                    {draft.metadata.image && <img data-testid="cfe-image-preview" src={draft.metadata.image} class="w-40 rounded border border-edge" />}
+                    {draft.metadata.image && <img data-testid="cfe-image-preview" src={draft.metadata.image} class="w-40 rounded-sm border border-edge" />}
+                    <label class="flex items-center gap-2 text-sm text-ink">
+                      <input data-testid="cfe-reviewed" type="checkbox" checked={!!draft.metadata.reviewed} onChange={(e) => setMeta('reviewed', (e.target as HTMLInputElement).checked)} />
+                      Reviewed (show on landing page)
+                    </label>
                   </div>
                 )}
 
@@ -297,6 +355,34 @@ export function Admin() {
       {tab === 'users' && (
         <div>
           <h2 class="font-bold text-ink-heading mb-3">User management</h2>
+          <div data-testid="add-user" class="flex items-end gap-2 mb-5 flex-wrap bg-bg-card border border-edge rounded-md p-4">
+            <label class="text-xs text-ink-muted flex flex-col gap-1">
+              Zooniverse login
+              <input
+                data-testid="add-user-login"
+                class="rounded-sm border border-edge bg-bg px-3 py-2 text-sm text-ink"
+                placeholder="e.g. researcher1"
+                value={newLogin}
+                onInput={(e) => setNewLogin((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => e.key === 'Enter' && addUser()}
+              />
+            </label>
+            <label class="text-xs text-ink-muted flex flex-col gap-1">
+              Role
+              <select
+                data-testid="add-user-role"
+                class="rounded-sm border border-edge bg-bg px-3 py-2 text-sm text-ink"
+                value={newRole}
+                onChange={(e) => setNewRole((e.target as HTMLSelectElement).value)}
+              >
+                <option value="contributor">contributor</option>
+                <option value="admin">admin</option>
+              </select>
+            </label>
+            <button data-testid="add-user-submit" class="px-4 py-2 rounded-sm bg-accent text-bg font-medium" onClick={addUser}>
+              Add user
+            </button>
+          </div>
           <table data-testid="users-table" class="w-full text-sm border border-edge rounded-md overflow-hidden">
             <thead class="bg-bg-card text-ink-muted">
               <tr>
@@ -311,7 +397,10 @@ export function Admin() {
               )}
               {users.map((u) => (
                 <tr key={u.id} data-testid="user-row" data-login={u.login} class="border-t border-edge">
-                  <td class="px-3 py-2 text-ink">{u.login}</td>
+                  <td class="px-3 py-2 text-ink">
+                    {u.login}
+                    {u.pending ? <span data-testid="user-pending" class="ml-2 text-xs text-ink-muted">(pending sign-in)</span> : null}
+                  </td>
                   <td class="px-3 py-2 text-ink-muted">{u.display_name}</td>
                   <td class="px-3 py-2">
                     <select

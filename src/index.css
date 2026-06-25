@@ -1,15 +1,27 @@
 @import 'tailwindcss';
 
-/* Dark theme tokens mirroring zoo-playground/index.html */
+/* Theme tokens (PROPOSAL — Phase 7). Neutral charcoal base (darkmatter-ish "interesting"
+   dark) + a warm amber accent (caffeine warmth). All components compose from these eight
+   variables, so this is the single place to retune or swap in a tweakcn export. */
 @theme {
-  --color-bg: #0f1117;
-  --color-bg-card: #1a1d2e;
-  --color-bg-card-hover: #222640;
-  --color-accent: #00c853;
-  --color-ink: #e0e0e0;
-  --color-ink-muted: #8a8fa8;
-  --color-ink-heading: #ffffff;
-  --color-edge: #2a2e42;
+  --color-bg: #0c0d11;
+  --color-bg-card: #16181f;
+  --color-bg-card-hover: #1f222b;
+  --color-accent: #e0a44a;
+  --color-ink: #cfd1d6;
+  --color-ink-muted: #888b95;
+  --color-ink-heading: #f6f5f2;
+  --color-edge: #272a33;
+
+  /* Crisp, near-square corners (de-AI). All rounded-* utilities map here; rounded-full
+     is handled per-element (it's hardcoded to infinity in Tailwind). */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
 }
 
 html,
@@ -31,6 +43,6 @@ body {
 .prose-cfe ul { list-style: disc; margin: 0.5em 0; padding-left: 1.4em; }
 .prose-cfe ol { list-style: decimal; margin: 0.5em 0; padding-left: 1.4em; }
 .prose-cfe code { background: rgba(255,255,255,0.08); padding: 0.1em 0.3em; border-radius: 4px; font-size: 0.9em; }
-.prose-cfe pre { background: #0b0d14; border: 1px solid var(--color-edge); border-radius: 8px; padding: 12px; overflow:auto; }
+.prose-cfe pre { background: #08090c; border: 1px solid var(--color-edge); border-radius: 8px; padding: 12px; overflow:auto; }
 .prose-cfe pre code { background: none; padding: 0; }
 .prose-cfe blockquote { border-left: 3px solid var(--color-edge); padding-left: 12px; color: var(--color-ink-muted); }

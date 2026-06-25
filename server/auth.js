@@ -117,10 +117,15 @@ export function attachUser(req, _res, next) {
 }
 
 const RANK = { contributor: 1, admin: 2 }
+// No whitelist: any authenticated Zooniverse user is treated as a contributor.
+// An explicit 'admin' role is still required for admin-only surfaces.
+function effectiveRank(user) {
+  if (!user) return 0
+  return RANK[user.role] || RANK.contributor
+}
 export function requireRole(min) {
   return (req, res, next) => {
-    const have = req.user?.role ? RANK[req.user.role] || 0 : 0
-    if (have >= RANK[min]) return next()
+    if (effectiveRank(req.user) >= RANK[min]) return next()
     res.status(403).json({ error: 'forbidden', need: min, have: req.user?.role || null })
   }
 }

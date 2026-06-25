@@ -21,4 +21,5 @@ export async function logout() {
 }
 
 export const isAdmin = () => user.value?.role === 'admin'
-export const canWrite = () => !!user.value?.role
+// No whitelist: any signed-in Zooniverse user can contribute.
+export const canWrite = () => !!user.value

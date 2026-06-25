@@ -22,7 +22,7 @@ export function AuthButton() {
       <div class="flex items-center gap-3 text-sm">
         <span data-testid="auth-user" class="text-ink-muted">
           {u.login}
-          {u.role ? <span class="text-accent"> · {u.role}</span> : <span class="text-ink-muted"> · viewer</span>}
+          {u.role ? <span class="text-accent"> · {u.role}</span> : <span class="text-ink-muted"> · member</span>}
         </span>
         <button
           data-testid="auth-signout"

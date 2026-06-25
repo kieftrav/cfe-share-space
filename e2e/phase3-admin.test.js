@@ -83,12 +83,14 @@ describe('Phase 3 — admin console (built first)', () => {
       await page.goto(server.baseUrl, { waitUntil: 'networkidle0' })
       await page.click('[data-testid="nav-resources"]')
       await page.waitForSelector('[data-testid="resources-menu"]')
-      let order = await page.$$eval('[data-testid="resources-menu"] a', (as) => as.map((a) => a.textContent.trim()))
+      let order = await page.$$eval('[data-testid="resources-menu"] a:not([data-testid="res-link-all"])', (as) => as.map((a) => a.textContent.trim()))
       assert.deepEqual(order, ['Getting Started', 'FAQ'], 'nav order matches creation order')
 
       // Reorder in admin: move Getting Started down.
       await page.goto(`${server.baseUrl}/admin`, { waitUntil: 'networkidle0' })
       const gsId = await nodeIdByTitle(page, 'Getting Started')
+      await page.click(`[data-testid="tree-node"][data-id="${gsId}"] [data-testid="node-menu"]`)
+      await page.waitForSelector(`[data-testid="tree-node"][data-id="${gsId}"] [data-testid="node-down"]`)
       await page.click(`[data-testid="tree-node"][data-id="${gsId}"] [data-testid="node-down"]`)
       // Wait for the reorder to persist + the admin tree to re-render in new order.
       await page.waitForFunction(() => {
@@ -101,7 +103,7 @@ describe('Phase 3 — admin console (built first)', () => {
       await page.goto(server.baseUrl, { waitUntil: 'networkidle0' })
       await page.click('[data-testid="nav-resources"]')
       await page.waitForSelector('[data-testid="resources-menu"]')
-      order = await page.$$eval('[data-testid="resources-menu"] a', (as) => as.map((a) => a.textContent.trim()))
+      order = await page.$$eval('[data-testid="resources-menu"] a:not([data-testid="res-link-all"])', (as) => as.map((a) => a.textContent.trim()))
       assert.deepEqual(order, ['FAQ', 'Getting Started'], 'nav order updates after reorder')
     } finally {
       await page.close()

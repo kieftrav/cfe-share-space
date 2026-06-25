@@ -39,6 +39,19 @@ export function Resources() {
   )
 }
 
+// The page renders the title as its <h1>; if the body's first line is a heading that
+// repeats the title, drop it so the title isn't shown twice.
+function stripLeadingTitle(md: string, title: string): string {
+  const lines = (md || '').split('\n')
+  let i = 0
+  while (i < lines.length && lines[i].trim() === '') i++
+  const m = lines[i]?.match(/^#{1,6}\s+(.*)$/)
+  if (m && m[1].trim().toLowerCase() === (title || '').trim().toLowerCase()) {
+    return lines.slice(i + 1).join('\n').replace(/^\n+/, '')
+  }
+  return md
+}
+
 export function ResourcePage({ id }: { id: string }) {
   const [item, setItem] = useState<Content | null | undefined>(undefined)
   useEffect(() => {
@@ -51,7 +64,7 @@ export function ResourcePage({ id }: { id: string }) {
   return (
     <article data-testid="resource-page">
       <h1 class="text-3xl font-bold text-ink-heading mb-4">{item.title}</h1>
-      <Markdown source={item.body_markdown} />
+      <Markdown source={stripLeadingTitle(item.body_markdown, item.title)} />
     </article>
   )
 }

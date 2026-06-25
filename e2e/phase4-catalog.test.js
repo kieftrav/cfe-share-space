@@ -44,6 +44,8 @@ describe('Phase 4 — CFE catalog (built via admin UI)', () => {
       const fileInput = await admin.$('[data-testid="cfe-image-input"]')
       await fileInput.uploadFile(imgPath)
       await admin.waitForSelector('[data-testid="cfe-image-preview"]')
+      // Mark reviewed so it shows on the reviewed-only landing page (Phase 4 of task #404).
+      await admin.click('[data-testid="cfe-reviewed"]')
       await Promise.all([
         admin.waitForFunction(() => [...document.querySelectorAll('[data-testid="tree-node"] span')].some((s) => s.textContent.includes('Clump Scout CFE')), {}),
         admin.click('[data-testid="editor-save"]'),

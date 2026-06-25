@@ -18,7 +18,15 @@ export function CfeCard({ cfe }: { cfe: Content }) {
         )}
       </div>
       <div>
-        <h3 class="text-2xl font-bold text-ink-heading mb-2">{cfe.title}</h3>
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <h3 class="text-2xl font-bold text-ink-heading">{cfe.title}</h3>
+          {!m.reviewed && (
+            <span data-testid="cfe-inprogress-badge" class="text-xs px-2 py-0.5 rounded-sm border border-edge text-ink-muted">
+              In progress
+            </span>
+          )}
+        </div>
+        {m.owner && <p class="text-xs text-ink-muted mb-3">by {m.owner}</p>}
         {m.tagline && <p class="text-accent font-medium mb-4">{m.tagline}</p>}
         {cfe.body_markdown && <div class="text-ink-muted mb-5"><Markdown source={cfe.body_markdown} /></div>}
         {Array.isArray(m.tags) && m.tags.length > 0 && (
