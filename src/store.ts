@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals'
 import { api } from './api'
 
-export type User = { login: string; display_name: string; role: string | null } | null
+export type User = { id: string; login: string; display_name: string; role: string | null } | null
 
 // undefined = still loading, null = anonymous, object = signed in
 export const user = signal<User | undefined>(undefined)
@@ -21,5 +21,8 @@ export async function logout() {
 }
 
 export const isAdmin = () => user.value?.role === 'admin'
-// No whitelist: any signed-in Zooniverse user can contribute.
+// Any signed-in user can contribute.
 export const canWrite = () => !!user.value
+// Admins manage anything; everyone else only their own authored content.
+export const canManage = (item: { author_id?: string | null }) =>
+  isAdmin() || (!!user.value && item.author_id === user.value.id)

@@ -29,7 +29,7 @@ try {
   }
 
   if (await page.$('#user_login')) {
-    log('login page — submitting credentials')
+    log('login page: submitting credentials')
     await page.type('#user_login', USER)
     await page.type('#user_password', PASS)
     await Promise.all([
@@ -41,7 +41,7 @@ try {
   }
 
   if (page.url().includes('/oauth/authorize')) {
-    log('consent page — approving')
+    log('consent page: approving')
     await page.evaluate(() => {
       for (const i of document.querySelectorAll('input[type="submit"], button')) {
         const v = (i.value || i.textContent || '').toLowerCase()

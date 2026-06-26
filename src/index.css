@@ -1,8 +1,6 @@
 @import 'tailwindcss';
 
-/* Theme tokens (PROPOSAL — Phase 7). Neutral charcoal base (darkmatter-ish "interesting"
-   dark) + a warm amber accent (caffeine warmth). All components compose from these eight
-   variables, so this is the single place to retune or swap in a tweakcn export. */
+/* Charcoal base + warm amber accent. Every component composes from these tokens, so this is the single place to retune the theme. */
 @theme {
   --color-bg: #0c0d11;
   --color-bg-card: #16181f;
@@ -13,8 +11,7 @@
   --color-ink-heading: #f6f5f2;
   --color-edge: #272a33;
 
-  /* Crisp, near-square corners (de-AI). All rounded-* utilities map here; rounded-full
-     is handled per-element (it's hardcoded to infinity in Tailwind). */
+  /* Near-square corners: every rounded-* utility maps here (rounded-full is set per-element). */
   --radius-xs: 1px;
   --radius-sm: 2px;
   --radius-md: 2px;

@@ -20,7 +20,7 @@ after(async () => {
   if (server) await server.stop()
 })
 
-describe('Phase 1 — role gating (trust boundary)', () => {
+describe('Role gating (trust boundary)', () => {
   test('signed-out can VIEW but cannot write (403)', async () => {
     const page = await browser.newPage()
     try {
@@ -61,7 +61,7 @@ describe('Phase 1 — role gating (trust boundary)', () => {
 // (ZOO_REDIRECT_URI) registered on the Zooniverse app AND the server running on
 // that registered host:port. Run on demand:  node scripts/probe-oauth.js
 // (or set CFE_OAUTH_E2E=1 with a server bound to the registered callback's port).
-describe('Phase 1 — live Zooniverse OAuth (redirect flow)', () => {
+describe('Live Zooniverse OAuth (redirect flow)', () => {
   const enabled = process.env.CFE_OAUTH_E2E === '1'
   const { username, password } = zooCreds()
   const run = enabled && username && password ? test : test.skip

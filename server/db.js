@@ -48,9 +48,7 @@ db.exec(`
     last_activity_at TEXT
   );
 
-  -- FTS5 trigram → case-insensitive substring/partial match. Kept in sync from
-  -- app code (server/content store) because 'body' is derived (title + markdown +
-  -- metadata text, EXCLUDING the base64 image).
+  -- FTS5 trigram for case-insensitive substring match; 'body' is derived in app code (excludes base64 images).
   CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
     content_id UNINDEXED, type, title, body, tokenize='trigram'
   );
@@ -65,8 +63,7 @@ export function healthy() {
   }
 }
 
-// Seed admins from SEED_ADMINS (comma-separated Zooniverse logins). Stored by
-// login here; reconciled to zooniverse_id on first sign-in (see auth.upsertUser).
+// Seed admins from SEED_ADMINS; stored by login, reconciled to id on first sign-in (see auth.upsertUser).
 export function seedAdmins() {
   const logins = (process.env.SEED_ADMINS || '')
     .split(',')

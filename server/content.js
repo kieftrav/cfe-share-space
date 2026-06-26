@@ -115,10 +115,6 @@ export function remove(id) {
   db.prepare('DELETE FROM content WHERE id = ?').run(id)
 }
 
-export function touchActivity(id) {
-  bumpActivity(id)
-}
-
 export function search(q) {
   q = (q || '').trim()
   if (q.length < 3) {

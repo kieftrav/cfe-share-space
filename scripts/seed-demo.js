@@ -21,12 +21,12 @@ C.create({ type: 'reply', parent_id: thread.id, body_markdown: 'Keep the tool st
 C.create({ type: 'announcement', title: 'CFE Share Space is live', body_markdown: 'Welcome! Browse the **CFE catalog**, start a **discussion**, and check the **resources**. Sign in with your Zooniverse account to contribute.' }, null)
 
 // Featured (elevates the thread)
-C.create({ type: 'featured', title: 'Editor’s pick: adding drawing tools', body_markdown: 'A great walkthrough on where tool state belongs — useful for anyone building a marking interface.', metadata: { links_content_id: thread.id } }, null)
+C.create({ type: 'featured', title: 'Editor’s pick: adding drawing tools', body_markdown: 'A great walkthrough on where tool state belongs, useful for anyone building a marking interface.', metadata: { links_content_id: thread.id } }, null)
 
 // Resources
 const res = C.create({ type: 'section', title: 'Resources', slug: 'resources' }, null)
 C.create({ type: 'page', parent_id: res.id, title: 'Getting Started', body_markdown: '# Getting Started\n\n1. Fork a template (Zoo Playground, Cosmic Canvas).\n2. Point it at your Zooniverse project.\n3. Share it here in the **CFE catalog**.' }, null)
-C.create({ type: 'page', parent_id: res.id, title: 'FAQ', body_markdown: '# FAQ\n\n**Who can post?** Whitelisted researchers and Zooniverse staff.\n\n**Where does code live?** In your own GitHub repo — link it from a CFE entry.' }, null)
+C.create({ type: 'page', parent_id: res.id, title: 'FAQ', body_markdown: '# FAQ\n\n**Who can post?** Any signed-in Zooniverse member.\n\n**Where does code live?** In your own GitHub repo; link it from a CFE entry.' }, null)
 C.create({ type: 'external_link', parent_id: res.id, title: 'API Documentation', metadata: { href: 'https://help.zooniverse.org/' } }, null)
 
 console.log('Seeded demo content.')

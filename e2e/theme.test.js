@@ -6,7 +6,7 @@ import { startServer } from './lib/server.js'
 import { launchBrowser, VIEWPORTS } from './lib/browser.js'
 import { loginAs, apiCreate } from './lib/helpers.js'
 
-const SHOTS = join(import.meta.dirname, 'screenshots', 'phase7-theme')
+const SHOTS = join(import.meta.dirname, 'screenshots', 'theme')
 mkdirSync(SHOTS, { recursive: true })
 
 let server, browser
@@ -22,7 +22,7 @@ after(async () => {
 // 1x1 PNG so CFE cards show an image region.
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
-describe('Phase 7 — visual theme pass (proposal): screenshots + tokens applied', () => {
+describe('Visual theme: tokens applied + screenshots', () => {
   test('new palette is applied site-wide; capture pages for review', async () => {
     // Seed content through the admin API so every page has something to show.
     const adminCtx = await browser.createBrowserContext()
@@ -87,7 +87,7 @@ describe('Phase 7 — visual theme pass (proposal): screenshots + tokens applied
       await u.waitForSelector('[data-testid="discussion"]')
       await u.screenshot({ path: join(SHOTS, 'discussion-desktop.png'), fullPage: true })
       await u.goto(`${server.baseUrl}/admin`, { waitUntil: 'networkidle0' })
-      await u.waitForSelector('[data-testid="content-tree"]')
+      await u.waitForSelector('[data-testid="users-table"]')
       await u.screenshot({ path: join(SHOTS, 'admin-desktop.png'), fullPage: true })
     } finally {
       await u.close(); await userCtx.close()

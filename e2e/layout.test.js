@@ -20,7 +20,7 @@ after(async () => {
   if (server) await server.stop()
 })
 
-describe('Phase 0 — layout shell', () => {
+describe('Layout shell', () => {
   test('/api/health reports ok + db', async () => {
     const res = await fetch(`${server.baseUrl}/api/health`)
     assert.equal(res.status, 200)
@@ -63,7 +63,7 @@ describe('Phase 0 — layout shell', () => {
         assert.equal(m.maxWidth, '1100px', `${name}: max-width capped`)
         assert.ok(Math.abs(m.left - m.right) <= 2, `${name}: centered (l=${m.left} r=${m.right})`)
         assert.ok(m.width <= 1100 + 1, `${name}: width within cap`)
-        await page.screenshot({ path: join(SHOTS, `phase0-${name}.png`) })
+        await page.screenshot({ path: join(SHOTS, `layout-${name}.png`) })
       } finally {
         await page.close()
       }

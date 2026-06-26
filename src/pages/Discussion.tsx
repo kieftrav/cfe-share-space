@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'preact/hooks'
 import { api, type Content } from '../api'
-import { user, canWrite } from '../store'
+import { canWrite, isAdmin, canManage } from '../store'
+import { ContentEditor } from '../components/ContentEditor'
+import { ManageMenu } from '../components/ManageMenu'
 
 export function Discussion() {
   const [tree, setTree] = useState<Content[] | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [cat, setCat] = useState<number | null>(null)
-  const [err, setErr] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [editing, setEditing] = useState<Content | null>(null) // a category or a thread
+  const [newThreadCat, setNewThreadCat] = useState<number | null>(null)
 
   async function load() {
     const { tree } = await api.get('/api/content/tree')
@@ -18,97 +18,85 @@ export function Discussion() {
     load().catch(() => setTree([]))
   }, [])
 
+  const admin = isAdmin()
   const categories = (tree || []).filter((n) => n.type === 'category')
+  const catOptions = categories.map((c) => ({ id: c.id, label: c.title }))
 
-  async function createThread() {
-    setErr('')
-    try {
-      const parent = cat ?? categories[0]?.id
-      if (!parent) return setErr('No category available — an admin must create one first.')
-      await api.post('/api/content', { type: 'thread', parent_id: parent, title, body_markdown: body })
-      setTitle(''); setBody(''); setShowForm(false)
-      await load()
-    } catch (e: any) {
-      setErr(e?.message || 'Failed')
-    }
-  }
+  const busy = creatingCategory || newThreadCat !== null || editing
 
   return (
     <section data-testid="discussion">
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <h1 class="text-3xl font-bold text-ink-heading">Discussion</h1>
-        {canWrite() && (
-          <button
-            data-testid="new-thread-btn"
-            class="px-4 py-2 rounded-md bg-accent text-bg font-medium"
-            onClick={() => setShowForm((v) => !v)}
-          >
-            New thread
-          </button>
+        {!busy && (
+          <div class="flex gap-2">
+            {admin && (
+              <button data-testid="new-category-btn" class="px-4 py-2 rounded-sm border border-edge text-ink" onClick={() => setCreatingCategory(true)}>
+                New category
+              </button>
+            )}
+            {canWrite() && categories.length > 0 && (
+              <button data-testid="new-thread-btn" class="px-4 py-2 rounded-sm bg-accent text-bg font-medium" onClick={() => setNewThreadCat(categories[0].id)}>
+                New thread
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {showForm && (
-        <div data-testid="new-thread-form" class="bg-bg-card border border-edge rounded-xl p-5 mb-8">
-          <select
-            data-testid="thread-category"
-            class="w-full mb-3 rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink"
-            value={cat ?? categories[0]?.id ?? ''}
-            onChange={(e) => setCat(Number((e.target as HTMLSelectElement).value))}
-          >
-            {categories.map((c) => (
-              <option value={c.id}>{c.title}</option>
-            ))}
-          </select>
-          <input
-            data-testid="thread-title"
-            class="w-full mb-3 rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink"
-            placeholder="Thread title"
-            value={title}
-            onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
-          />
-          <textarea
-            data-testid="thread-body"
-            class="w-full mb-3 rounded-md border border-edge bg-bg px-3 py-2 text-sm text-ink min-h-[120px]"
-            placeholder="What's your question?"
-            value={body}
-            onInput={(e) => setBody((e.target as HTMLTextAreaElement).value)}
-          />
-          {err && <p data-testid="thread-error" class="text-sm text-red-400 mb-2">{err}</p>}
-          <button data-testid="thread-submit" class="px-4 py-2 rounded-md bg-accent text-bg font-medium" onClick={createThread}>
-            Post thread
-          </button>
-        </div>
+      {creatingCategory ? (
+        <ContentEditor initial={{ type: 'category' }} onSaved={() => { setCreatingCategory(false); load() }} onCancel={() => setCreatingCategory(false)} />
+      ) : newThreadCat !== null ? (
+        <ContentEditor
+          initial={{ type: 'thread', parent_id: newThreadCat }}
+          titleLabel="Thread title"
+          parentOptions={catOptions}
+          onSaved={() => { setNewThreadCat(null); load() }}
+          onCancel={() => setNewThreadCat(null)}
+        />
+      ) : editing ? (
+        <ContentEditor
+          initial={editing}
+          titleLabel={editing.type === 'category' ? 'Category title' : 'Thread title'}
+          parentOptions={editing.type === 'thread' ? catOptions : undefined}
+          onSaved={() => { setEditing(null); load() }}
+          onCancel={() => setEditing(null)}
+        />
+      ) : (
+        <>
+          {tree === null && <p class="text-ink-muted">Loading…</p>}
+          {tree && categories.length === 0 && <p data-testid="discussion-empty" class="text-ink-muted">No categories yet.</p>}
+          <div class="flex flex-col gap-8">
+            {categories.map((c) => {
+              const threads = (c.children || []).filter((t) => t.type === 'thread')
+              threads.sort((a, b) => (b.last_activity_at || '').localeCompare(a.last_activity_at || ''))
+              return (
+                <div key={c.id} data-testid="category">
+                  <div class="flex items-center gap-3 mb-1">
+                    <h2 class="text-xl font-bold text-ink-heading">{c.title}</h2>
+                    {admin && <ManageMenu item={c} onEdit={() => setEditing(c)} onDeleted={load} />}
+                  </div>
+                  {c.body_markdown && <p class="text-ink-muted text-sm mb-3">{c.body_markdown}</p>}
+                  <ul class="flex flex-col gap-2 list-none m-0 p-0">
+                    {threads.length === 0 && <li class="text-ink-muted text-sm">No threads yet.</li>}
+                    {threads.map((t) => (
+                      <li key={t.id} data-testid="thread-row" class="bg-bg-card border border-edge rounded-sm px-4 py-3 flex items-center justify-between gap-3">
+                        <div>
+                          <a href={`/discussion/${t.id}`} class="text-ink-heading font-medium no-underline hover:text-accent">{t.title}</a>
+                          <span class="text-xs text-ink-muted ml-2">
+                            {(t.children || []).filter((r) => r.type === 'reply').length} replies
+                          </span>
+                        </div>
+                        {canManage(t) && <ManageMenu item={t} onEdit={() => setEditing(t)} onDeleted={load} />}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </>
       )}
-
-      {tree === null && <p class="text-ink-muted">Loading…</p>}
-      {tree && categories.length === 0 && <p data-testid="discussion-empty" class="text-ink-muted">No categories yet.</p>}
-      <div class="flex flex-col gap-8">
-        {categories.map((c) => {
-          const threads = (c.children || []).filter((t) => t.type === 'thread')
-          threads.sort((a, b) => (b.last_activity_at || '').localeCompare(a.last_activity_at || ''))
-          return (
-            <div key={c.id} data-testid="category">
-              <h2 class="text-xl font-bold text-ink-heading mb-1">{c.title}</h2>
-              {c.body_markdown && <p class="text-ink-muted text-sm mb-3">{c.body_markdown}</p>}
-              <ul class="flex flex-col gap-2 list-none m-0 p-0">
-                {threads.length === 0 && <li class="text-ink-muted text-sm">No threads yet.</li>}
-                {threads.map((t) => (
-                  <li key={t.id} data-testid="thread-row" class="bg-bg-card border border-edge rounded-lg px-4 py-3">
-                    <a href={`/discussion/${t.id}`} class="text-ink-heading font-medium no-underline hover:text-accent">
-                      {t.title}
-                    </a>
-                    <span class="text-xs text-ink-muted ml-2">
-                      {(t.children || []).filter((r) => r.type === 'reply').length} replies
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )
-        })}
-      </div>
-      {!user.value && <p class="text-ink-muted text-sm mt-8">Sign in to start a thread or reply.</p>}
     </section>
   )
 }

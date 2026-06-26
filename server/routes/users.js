@@ -5,8 +5,7 @@ import { requireRole } from '../auth.js'
 const r = Router()
 
 r.get('/', requireRole('admin'), (_req, res) => {
-  // Real (signed-in) users, plus role grants keyed by login for people who haven't
-  // signed in yet (reconciled to their real id on first sign-in — see auth.upsertUser).
+  // Real (signed-in) users plus pending role grants keyed by login (reconciled on first sign-in).
   const rows = db
     .prepare(
       `SELECT u.zooniverse_id AS id, u.login, u.display_name, r.role, 0 AS pending
@@ -22,8 +21,7 @@ r.get('/', requireRole('admin'), (_req, res) => {
   res.json({ users: rows })
 })
 
-// Add a user by Zooniverse login + role. If they've already signed in, the role lands
-// on their real account; otherwise it's stored as a pending grant keyed by login.
+// Add a user by login + role; lands on their account if they've signed in, else stored as pending.
 r.post('/', requireRole('admin'), (req, res) => {
   const login = String(req.body?.login || '').trim()
   const { role } = req.body || {}

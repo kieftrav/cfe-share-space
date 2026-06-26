@@ -27,7 +27,7 @@ function apiStatus(page, path) {
   }, path)
 }
 
-describe('Phase 2 — Discussion is gated for signed-out users; everything else is public', () => {
+describe('Discussion is gated for signed-out users; everything else is public', () => {
   test('anon cannot read discussion content but can read CFEs/News/Featured/Resources', async () => {
     let threadId, cfeId
 
@@ -73,7 +73,7 @@ describe('Phase 2 — Discussion is gated for signed-out users; everything else 
       await anon.goto(`${server.baseUrl}/discussion`, { waitUntil: 'networkidle0' })
       await anon.waitForSelector('[data-testid="auth-gate"]')
       assert.equal(await anon.$('[data-testid="discussion"]'), null, 'forum not rendered for anon')
-      await anon.screenshot({ path: join(SHOTS, 'phase2-discussion-gate.png') })
+      await anon.screenshot({ path: join(SHOTS, 'discussion-gate.png') })
 
       // UI: a thread URL is also gated.
       await anon.goto(`${server.baseUrl}/discussion/${threadId}`, { waitUntil: 'networkidle0' })

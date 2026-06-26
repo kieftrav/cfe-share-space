@@ -27,7 +27,7 @@ async function searchTitles(page, baseUrl, q) {
   return page.$$eval('[data-testid="search-result"]', (els) => els.map((e) => e.textContent.trim()))
 }
 
-describe('Phase 8 — search (FTS5 trigram, partial match)', () => {
+describe('Search (FTS5 trigram, partial match)', () => {
   let threadId
 
   test('seed varied content (admin)', async () => {
@@ -54,7 +54,7 @@ describe('Phase 8 — search (FTS5 trigram, partial match)', () => {
     try {
       const titles = await searchTitles(page, server.baseUrl, 'galax')
       assert.ok(titles.some((t) => /Galaxy Zoo Clump Scout/.test(t)), `expected CFE hit, got ${JSON.stringify(titles)}`)
-      await page.screenshot({ path: join(SHOTS, 'phase8-search.png') })
+      await page.screenshot({ path: join(SHOTS, 'search.png') })
     } finally {
       await page.close()
     }

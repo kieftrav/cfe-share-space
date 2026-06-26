@@ -1,8 +1,7 @@
 import type { ComponentChildren } from 'preact'
 import { user } from '../store'
 
-// Discussion is researcher-only. Signed-out visitors get a sign-in prompt instead
-// of the forum; the rest of the site stays public.
+// Discussion is sign-in-only; signed-out visitors get a prompt instead of the forum.
 export function RequireAuth({ children }: { children: ComponentChildren }) {
   const u = user.value
   if (u === undefined) return <p class="text-ink-muted">Loading…</p>
@@ -17,7 +16,7 @@ export function RequireAuth({ children }: { children: ComponentChildren }) {
           data-testid="auth-gate-signin"
           type="button"
           onClick={() => {
-            window.location.href = '/api/auth/login'
+            window.location.href = '/api/auth/login?return=' + encodeURIComponent(location.pathname + location.search)
           }}
           class="text-sm font-medium px-5 py-2 rounded-md bg-accent text-bg cursor-pointer"
         >

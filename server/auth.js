@@ -18,8 +18,7 @@ export function authorizeUrl() {
   return u.toString()
 }
 
-// Exchange an OOB authorization code for an access token (server-side; the secret
-// never leaves the backend).
+// Exchange the authorization code for an access token; the secret stays server-side.
 export async function exchangeCode(code) {
   const res = await fetch(`${ORIGIN}/oauth/token`, {
     method: 'POST',
@@ -117,8 +116,7 @@ export function attachUser(req, _res, next) {
 }
 
 const RANK = { contributor: 1, admin: 2 }
-// No whitelist: any authenticated Zooniverse user is treated as a contributor.
-// An explicit 'admin' role is still required for admin-only surfaces.
+// Any authenticated user is at least a contributor; admin is granted explicitly.
 function effectiveRank(user) {
   if (!user) return 0
   return RANK[user.role] || RANK.contributor
@@ -130,8 +128,7 @@ export function requireRole(min) {
   }
 }
 
-// Test-only direct login (guarded by CFE_TEST_MODE) so UI e2e tests don't have to
-// round-trip live Zooniverse for every case. Phase 1's e2e proves the REAL flow.
+// Test-only direct login (guarded by CFE_TEST_MODE) so UI e2e tests skip the live round-trip.
 export function testLoginEnabled() {
   return TEST_MODE
 }

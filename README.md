@@ -9,18 +9,21 @@ hierarchy, stored in sqlite) edited through one markdown editor and managed from
 
 - **Frontend:** Vite + Preact + TypeScript + Tailwind v4 (`@preact/signals` for auth state)
 - **Backend:** Express + **`node:sqlite`** (built-in — no native deps; FTS5 trigram for search)
-- **Auth:** Zooniverse Doorkeeper **Authorization Code grant (OOB)** — secret stays backend-only
-- **Tests:** Puppeteer end-to-end (`node --test`), one suite per phase, headful + screenshots
+- **Auth:** Zooniverse Doorkeeper **Authorization Code grant (redirect flow)**; secret stays backend-only
+- **Tests:** Puppeteer end-to-end (`node --test`), one suite per feature, headful + screenshots
 
 ## Run
 
 ```bash
 npm install
 cp .env.example .env     # fill in the Zooniverse OAuth app (CFE WIP) values
-npm run dev              # Vite on :5173 (proxies /api → Express on :8787)
+npm run dev              # Vite (HMR) on :3000, proxies /api to Express on :8787
 # or production-style (one server serves built SPA + API):
 npm start                # build + node server on :8787
 ```
+
+Ports are fixed so the OAuth callback URLs stay stable: dev runs on **:3000**, prod on **:8787**.
+Override with `vite --port <n>` (dev) or `PORT=<n>` (prod).
 
 ## Auth (Authorization Code, redirect flow)
 
@@ -32,9 +35,10 @@ Standard redirect round-trip; the browser never sees the secret:
    `/oauth/token`, fetches `/api/me`, resolves your role, sets an httpOnly session cookie, and redirects home.
 
 **Required once:** register the callback URL (`ZOO_REDIRECT_URI`) on the Zooniverse OAuth app
-("CFE WIP") — exactly `http://localhost:8787/api/auth/callback` for local review. Doorkeeper rejects
-any unregistered redirect URI. Multiple callback URLs can be listed (newline-separated). To verify the
-live flow end-to-end: `node scripts/probe-oauth.js`.
+("CFE WIP"). Doorkeeper rejects any unregistered redirect URI, so register both ports (newline-separated):
+`http://localhost:3000/api/auth/callback` (dev) and `http://localhost:8787/api/auth/callback` (prod), and
+set `ZOO_REDIRECT_URI` in `.env` to match the one you're running. To verify the live flow end-to-end:
+`node scripts/probe-oauth.js`.
 
 Roles: `public` (read) · `contributor` (create threads/replies/CFEs) · `admin` (everything + content
 manager + user management). Seed admins via `SEED_ADMINS` in `.env` (comma-separated Zooniverse logins).
@@ -51,19 +55,24 @@ text (never the base64 image) into an FTS5 **trigram** table for case-insensitiv
 ## Tests
 
 ```bash
-npm run test:e2e                                   # all phases (serial; includes a live OAuth sign-in)
-HEADFUL=1 node --test e2e/phase4-catalog.test.js   # watch one phase in a real browser
+npm run test:e2e                              # all suites (serial; includes a live OAuth sign-in)
+HEADFUL=1 node --test e2e/cfe-crud.test.js    # watch one suite in a real browser
 ```
 
 Screenshots land in `e2e/screenshots/`. The live OAuth test uses `ZOO_USERNAME`/`ZOO_PASSWORD`.
 
 | Suite | Covers |
 |---|---|
-| phase0-layout | shell, nav, centered/breakpoint layout, `/api/health` |
-| phase1-auth | role gating (403 trust boundary) + **real Zooniverse OOB sign-in** |
-| phase3-admin | content tree manager (create/edit/reorder/renest) + user management |
-| phase4-catalog | CFE catalog built via admin UI: base64 image, repo opens new tab, responsive grid |
-| phase5-forum | categories/threads/replies, recent-activity sort, code-reference blocks |
-| phase6-news-featured | announcements + elevating a thread to a featured topic |
-| phase7-resources | Resources section + pages + external API-docs link (help.zooniverse.org) |
-| phase8-search | FTS5 trigram partial match across content + metadata; result navigation |
+| layout | shell, nav, centered/breakpoint layout, `/api/health` |
+| auth | role gating (403 trust boundary) + **real Zooniverse sign-in** |
+| auth-return | sign-in returns to the originating page |
+| admin | user administration (role changes, add user by login) |
+| open-contribution | any signed-in user can contribute; no whitelist |
+| discussion-gate | Discussion is sign-in-only; everything else stays public |
+| cfe-crud | CFE create/edit/delete, authorization, Reviewed/All toggle, responsive card |
+| news-crud / featured-crud / discussion-crud / resources-crud | per-section content management |
+| volunteer-callout | landing callout linking to the Zooniverse CFE page |
+| resources-nav | Resources dropdown navigation |
+| nav-active | top-nav highlights the current page |
+| theme | theme tokens applied + page screenshots |
+| search | FTS5 trigram partial match across content + metadata; result navigation |

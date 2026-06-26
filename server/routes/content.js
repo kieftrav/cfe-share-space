@@ -5,8 +5,7 @@ import { requireRole } from '../auth.js'
 const r = Router()
 const CONTRIB_TYPES = new Set(['thread', 'reply', 'cfe'])
 
-// Discussion is researcher-only: signed-out visitors can't read it. Everything
-// else (CFEs, News, Featured, Resources) stays public.
+// Discussion is sign-in-only; every other type stays publicly readable.
 const DISCUSSION_TYPES = new Set(['category', 'thread', 'reply'])
 const isDiscussion = (t) => DISCUSSION_TYPES.has(t)
 
@@ -52,6 +51,8 @@ r.post('/', requireRole('contributor'), (req, res) => {
   if (req.user.role !== 'admin' && !CONTRIB_TYPES.has(f.type)) {
     return res.status(403).json({ error: `type '${f.type}' requires admin` })
   }
+  // 'reviewed' (lands a CFE on the public landing) is an admin-only flag.
+  if (req.user.role !== 'admin' && f.metadata) f.metadata.reviewed = false
   res.status(201).json({ item: C.create(f, req.user) })
 })
 
@@ -62,7 +63,10 @@ r.put('/:id', requireRole('contributor'), (req, res) => {
   if (req.user.role !== 'admin' && existing.author_id !== req.user.id) {
     return res.status(403).json({ error: 'not your content' })
   }
-  res.json({ item: C.update(id, req.body || {}) })
+  const body = req.body || {}
+  // Non-admins can never change 'reviewed': preserve whatever an admin set.
+  if (req.user.role !== 'admin' && body.metadata) body.metadata.reviewed = !!existing.metadata?.reviewed
+  res.json({ item: C.update(id, body) })
 })
 
 r.delete('/:id', requireRole('contributor'), (req, res) => {

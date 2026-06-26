@@ -52,6 +52,14 @@ export async function apiCreate(page, payload) {
   }, payload)
 }
 
+// Open an item's ⋮ (ManageMenu) and click one of its actions. `scope` is the
+// ElementHandle of the item (card / row / li) that contains the menu.
+export async function kebabAction(page, scope, actionTestid) {
+  await scope.$eval('[data-testid="manage-menu"]', (b) => b.click())
+  await page.waitForSelector('[data-testid="manage-menu-panel"]')
+  await scope.$eval(`[data-testid="${actionTestid}"]`, (b) => b.click())
+}
+
 export async function postStatus(page, payload) {
   return page.evaluate(async (p) => {
     const r = await fetch('/api/content', {

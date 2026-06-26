@@ -18,7 +18,7 @@ function apiStatus(page, path) {
   return page.evaluate(async (p) => (await fetch(p, { credentials: 'include' })).status, path)
 }
 
-describe('Phase 3 — any signed-in Zooniverse user can contribute (no whitelist)', () => {
+describe('Any signed-in Zooniverse user can contribute (no whitelist)', () => {
   test('roleless authenticated user can create CFEs + threads + replies, but not admin actions', async () => {
     const ctx = await browser.createBrowserContext()
     const page = await ctx.newPage()
@@ -36,9 +36,10 @@ describe('Phase 3 — any signed-in Zooniverse user can contribute (no whitelist
       assert.equal(await postStatus(page, { type: 'section', title: 'Resources' }), 403, 'admin-only type blocked')
       assert.equal(await apiStatus(page, '/api/users'), 403, 'user management blocked for non-admin')
 
-      // Frontend: the write UI shows for a roleless signed-in user.
-      await page.goto(`${server.baseUrl}/discussion`, { waitUntil: 'networkidle0' })
-      await page.waitForSelector('[data-testid="new-thread-btn"]')
+      // Frontend: the contribute UI shows for a roleless signed-in user (CFE submission
+      // needs no pre-existing category, unlike threads).
+      await page.goto(`${server.baseUrl}/cfes`, { waitUntil: 'networkidle0' })
+      await page.waitForSelector('[data-testid="submit-cfe-btn"]')
     } finally {
       await page.close(); await ctx.close()
     }

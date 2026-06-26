@@ -2,25 +2,43 @@ import { Router } from 'express'
 import * as auth from '../auth.js'
 
 const r = Router()
+const RETURN_COOKIE = 'cfe_return'
 
-// Step 1: send the user to Zooniverse to authorize (standard redirect flow).
-r.get('/login', (_req, res) => res.redirect(auth.authorizeUrl()))
+// Only allow returning to a local path (no open redirects to other origins).
+function sanitizeReturn(v) {
+  if (typeof v !== 'string' || !v.startsWith('/') || v.startsWith('//') || v.startsWith('/\\')) return null
+  return v
+}
 
-// Step 2: Zooniverse redirects back here with ?code=. Exchange it server-side
-// (secret never leaves the backend), set the session cookie, go home.
+// Read + clear the stored return path, then redirect there (with optional query).
+function redirectBack(req, res, query = '') {
+  const ret = sanitizeReturn(req.cookies?.[RETURN_COOKIE]) || '/'
+  res.clearCookie(RETURN_COOKIE, { path: '/' })
+  res.redirect(ret + query)
+}
+
+// Step 1: remember where the user started, then send them to Zooniverse to authorize.
+r.get('/login', (req, res) => {
+  const ret = sanitizeReturn(req.query.return)
+  if (ret) res.cookie(RETURN_COOKIE, ret, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 10 * 60 * 1000 })
+  else res.clearCookie(RETURN_COOKIE, { path: '/' })
+  res.redirect(auth.authorizeUrl())
+})
+
+// Step 2: Zooniverse redirects back with ?code=; exchange it, set the session, return to origin.
 r.get('/callback', async (req, res) => {
   const { code, error, error_description } = req.query
-  if (error) return res.redirect('/?auth_error=' + encodeURIComponent(String(error_description || error)))
-  if (!code) return res.redirect('/?auth_error=missing_code')
+  if (error) return redirectBack(req, res, '?auth_error=' + encodeURIComponent(String(error_description || error)))
+  if (!code) return redirectBack(req, res, '?auth_error=missing_code')
   try {
     const tok = await auth.exchangeCode(String(code))
     const me = await auth.fetchMe(tok.access_token)
     auth.upsertUser(me)
     const expiry = Date.now() + (tok.expires_in || 7200) * 1000
     auth.setSessionCookie(res, auth.createSession(me.id, tok.access_token, expiry))
-    res.redirect('/')
+    redirectBack(req, res)
   } catch (e) {
-    res.redirect('/?auth_error=' + encodeURIComponent(String(e.message || e).slice(0, 160)))
+    redirectBack(req, res, '?auth_error=' + encodeURIComponent(String(e.message || e).slice(0, 160)))
   }
 })
 

@@ -42,10 +42,8 @@ export function AuthButton() {
         data-testid="auth-button"
         type="button"
         onClick={() => {
-          // Full-page navigation (NOT client-side routing) so the server 302 to
-          // Zooniverse actually fires. A same-origin <a> would be intercepted by
-          // the SPA router and require a manual refresh.
-          window.location.href = '/api/auth/login'
+          // Full-page nav (not SPA routing) so the server redirect to Zooniverse fires; pass the origin to return to.
+          window.location.href = '/api/auth/login?return=' + encodeURIComponent(location.pathname + location.search)
         }}
         class="text-sm font-medium px-4 py-1.5 rounded-md border border-edge text-ink hover:border-accent hover:text-accent cursor-pointer"
       >

@@ -18,7 +18,7 @@ after(async () => {
   if (server) await server.stop()
 })
 
-describe('Phase 5 — landing volunteer callout', () => {
+describe('Landing volunteer callout', () => {
   test('signed-out landing shows a callout linking to the Zooniverse CFE page in a new tab', async () => {
     const ctx = await browser.createBrowserContext()
     const page = await ctx.newPage()
@@ -29,7 +29,7 @@ describe('Phase 5 — landing volunteer callout', () => {
       assert.ok(link, 'callout link present')
       assert.equal(await link.evaluate((a) => a.target), '_blank', 'opens in a new tab')
       assert.match(await link.evaluate((a) => a.href), /zooniverse\.org/, 'links to Zooniverse')
-      await page.screenshot({ path: join(SHOTS, 'phase5-volunteer-callout.png') })
+      await page.screenshot({ path: join(SHOTS, 'volunteer-callout.png') })
     } finally {
       await page.close(); await ctx.close()
     }

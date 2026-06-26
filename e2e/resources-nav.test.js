@@ -19,7 +19,7 @@ after(async () => {
   if (server) await server.stop()
 })
 
-describe('Phase 6 — Resources dropdown navigation is reliable', () => {
+describe('Resources dropdown navigation is reliable', () => {
   test('click opens menu; click a sub-page navigates; click-outside closes', async () => {
     let pageId
     const adminCtx = await browser.createBrowserContext()
@@ -56,7 +56,7 @@ describe('Phase 6 — Resources dropdown navigation is reliable', () => {
       await page.waitForSelector('[data-testid="resources-menu"]')
       await page.click('[data-testid="resource-page"] h1')
       await page.waitForFunction(() => !document.querySelector('[data-testid="resources-menu"]'))
-      await page.screenshot({ path: join(SHOTS, 'phase6-resources-nav.png') })
+      await page.screenshot({ path: join(SHOTS, 'resources-nav.png') })
     } finally {
       await page.close(); await ctx.close()
     }

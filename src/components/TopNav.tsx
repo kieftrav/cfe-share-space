@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { useLocation } from 'preact-iso'
 import { api, type Content } from '../api'
 import { user } from '../store'
 import { AuthButton } from './AuthButton'
@@ -11,9 +12,16 @@ const PRIMARY = [
 ]
 
 export function TopNav() {
+  const { path } = useLocation()
   const [resources, setResources] = useState<Content[]>([])
   const [openRes, setOpenRes] = useState(false)
   const resRef = useRef<HTMLLIElement>(null)
+
+  // The active top-level page stays white (the rest are muted); hovering only shows a pointer.
+  const isActive = (href: string) =>
+    href === '/' ? path === '/' || path.startsWith('/cfes') : path.startsWith(href)
+  const linkCls = (active: boolean) =>
+    `${active ? 'text-ink' : 'text-ink-muted'} cursor-pointer no-underline`
 
   useEffect(() => {
     api
@@ -25,7 +33,7 @@ export function TopNav() {
       .catch(() => {})
   }, [])
 
-  // Close the dropdown on any click outside it (deterministic — no hover races).
+  // Close the dropdown on any click outside it (no hover races).
   useEffect(() => {
     if (!openRes) return
     const onDoc = (e: MouseEvent) => {
@@ -42,7 +50,7 @@ export function TopNav() {
         <ul class="flex items-center gap-4 text-sm flex-1 list-none m-0 p-0">
           {PRIMARY.map((item) => (
             <li key={item.key}>
-              <a href={item.href} data-testid={`nav-${item.key}`} class="text-ink-muted hover:text-ink no-underline">
+              <a href={item.href} data-testid={`nav-${item.key}`} aria-current={isActive(item.href) ? 'page' : undefined} class={linkCls(isActive(item.href))}>
                 {item.label}
               </a>
             </li>
@@ -52,7 +60,8 @@ export function TopNav() {
               data-testid="nav-resources"
               aria-haspopup="true"
               aria-expanded={openRes}
-              class="text-ink-muted hover:text-ink bg-transparent border-0 cursor-pointer text-sm"
+              aria-current={isActive('/resources') ? 'page' : undefined}
+              class={`bg-transparent border-0 text-sm ${linkCls(isActive('/resources'))}`}
               onClick={() => setOpenRes((v) => !v)}
             >
               Resources ▾
@@ -96,11 +105,11 @@ export function TopNav() {
             )}
           </li>
           <li>
-            <a href="/search" data-testid="nav-search" class="text-ink-muted hover:text-ink no-underline">Search</a>
+            <a href="/search" data-testid="nav-search" aria-current={isActive('/search') ? 'page' : undefined} class={linkCls(isActive('/search'))}>Search</a>
           </li>
           {user.value?.role === 'admin' && (
             <li>
-              <a href="/admin" data-testid="nav-admin" class="text-accent hover:text-ink no-underline">Admin</a>
+              <a href="/admin" data-testid="nav-admin" aria-current={isActive('/admin') ? 'page' : undefined} class={`no-underline cursor-pointer ${isActive('/admin') ? 'text-ink' : 'text-accent'}`}>Admin</a>
             </li>
           )}
         </ul>
